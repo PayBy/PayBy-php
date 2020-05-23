@@ -1,0 +1,32 @@
+{
+  "name": "payby/payby-php",
+  "description": "PayBy PHP Library",
+  "keywords": [
+    "payby",
+    "mobile payment processing",
+    "api"
+  ],
+  "homepage": "https://payby.com/",
+  "license": "MIT",
+  "authors": [
+    {
+      "name": "PayBy and contributors",
+      "homepage": "https://github.com/PayBy/PayBy-php/contributors"
+    }
+  ],
+  "require": {
+    "php": ">=5.6.0",
+    "ext-curl": "*",
+    "ext-json": "*",
+    "ext-mbstring": "*"
+  },
+  "require-dev": {
+  },
+  "autoload": {
+    "psr-4": { "PayBy\\" : "lib/" }
+  },
+  "extra": {
+    "branch-alias": {
+    }
+  }
+}
