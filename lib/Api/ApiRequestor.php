@@ -8,23 +8,15 @@ use PayBy\Error;
 
 class ApiRequestor
 {
-    /**
-     * @var string $privateKey The API key that's to be used to make requests.
-     */
-    public $privateKey;
-
     private $_apiBase;
 
-    private $_signOpts;
 
-    public function __construct($privateKey = null, $apiBase = null, $signOpts = null)
+    public function __construct($apiBase = null)
     {
-        $this->_privateKey = $privateKey;
         if (!$apiBase) {
             $apiBase = PayBy::$apiBase;
         }
         $this->_apiBase = $apiBase;
-        $this->_signOpts = $signOpts;
     }
 
     private static function _encodeObjects($d, $is_post = false)
@@ -97,13 +89,12 @@ class ApiRequestor
         if (!$headers) {
             $headers = [];
         }
-        list($rbody, $rcode, $myPrivateKey) = $this->_requestRaw($method, $url, $params, $headers);
+        list($rbody, $rcode) = $this->_requestRaw($method, $url, $params, $headers);
         // response code 502 retry
         if ($rcode == 502) {
-            list($rbody, $rcode, $myPrivateKey) = $this->_requestRaw($method, $url, $params, $headers);
+            list($rbody, $rcode) = $this->_requestRaw($method, $url, $params, $headers);
         }
-        $resp = $this->_interpretResponse($rbody, $rcode);
-        return [$resp, $myPrivateKey];
+        return $this->_interpretResponse($rbody, $rcode);
     }
 
 
@@ -166,7 +157,7 @@ class ApiRequestor
 
     private function _requestRaw($method, $url, $params, $headers)
     {
-        $myPrivateKey = $this->_privateKey;
+        $myPrivateKey = $this->privateKey();
         if (!$myPrivateKey) {
             $myPrivateKey = PayBy::$privateKey;
         }
@@ -193,7 +184,8 @@ class ApiRequestor
         $defaultHeaders = [
             'X-PayBy-Client-User-Agent' => json_encode($ua),
             'User-Agent' => 'PayBy/v1 PhpBindings/' . PayBy::VERSION,
-            'Authorization' => 'Bearer ' . $myPrivateKey,
+            'Content-Language' => 'en',
+            'Partner-Id:' => PayBy::$partnerId,
         ];
         if (PayBy::$apiVersion) {
             $defaultHeaders['PayBy-Version'] = PayBy::$apiVersion;
@@ -226,7 +218,7 @@ class ApiRequestor
             $rawHeaders,
             $params
         );
-        return [$rbody, $rcode, $myPrivateKey];
+        return [$rbody, $rcode];
     }
 
     private function _interpretResponse($rbody, $rcode)
@@ -245,8 +237,18 @@ class ApiRequestor
         return $resp;
     }
 
+    public static function buildPayByPubRequest()
+    {
+        return [
+            'requestTime' => date(DATE_RFC3339_EXTENDED),
+            'partnerId' => PayBy::$partnerId,
+            'bizContent' => [],
+        ];
+    }
+
     private function _curlRequest($method, $absUrl, $headers, $params)
     {
+
         $curl = curl_init();
         $method = strtolower($method);
         $opts = [];
@@ -274,28 +276,16 @@ class ApiRequestor
             $rawRequestBody = $params !== null ? json_encode($params) : '';
             $opts[CURLOPT_POSTFIELDS] = $rawRequestBody;
             $dataToBeSign .= $rawRequestBody;
-            if ($this->_signOpts !== null) {
-                if (isset($this->_signOpts['uri']) && $this->_signOpts['uri']) {
-                    $dataToBeSign .= parse_url($absUrl, PHP_URL_PATH);
-                }
-                if (isset($this->_signOpts['time']) && $this->_signOpts['time']) {
-                    $requestTime = time();
-                }
-            }
         } else {
             throw new Error\Api("Unrecognized method $method");
         }
 
         if ($this->privateKey()) {
-            if ($requestTime !== null) {
-                $dataToBeSign .= $requestTime;
-                $headers[] = 'PayBy-Request-Timestamp: ' . $requestTime;
-            }
-            $signResult = openssl_sign($dataToBeSign, $requestSignature, $this->privateKey(), 'sha256');
+            $signResult = openssl_sign($dataToBeSign, $requestSignature, $this->privateKey(), OPENSSL_ALGO_SHA256);
             if (!$signResult) {
                 throw new Error\Api("Generate signature failed");
             }
-            $headers[] = 'PayBy-Signature: ' . base64_encode($requestSignature);
+            $headers[] = 'sign: ' . base64_encode($requestSignature);
         }
 
         $absUrl = Util\Util::utf8($absUrl);
@@ -323,8 +313,8 @@ class ApiRequestor
                     $headers,
                     'X-PayBy-Client-Info: {"ca":"using PayBy-supplied CA bundle"}'
                 );
-                $cert = $this->caBundle();
                 curl_setopt($curl, CURLOPT_HTTPHEADER, $headers);
+                $cert = $this->caBundle();
                 curl_setopt($curl, CURLOPT_CAINFO, $cert);
                 $rbody = curl_exec($curl);
         }
@@ -377,7 +367,7 @@ class ApiRequestor
         if (PayBy::$caBundle) {
             return PayBy::$caBundle;
         }
-        return dirname(__FILE__) . '/../data/ca-certificates.crt';
+        return false;
     }
 
     private function privateKey()

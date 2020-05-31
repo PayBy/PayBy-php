@@ -11,56 +11,23 @@ abstract class ApiResource extends PayByObject
 {
     private static $HEADERS_TO_PERSIST = ['PayBy-Version' => true];
 
-    protected static $signOpts = [
-        'uri' => true,
-        'time' => true,
-    ];
-
     public static function baseUrl()
     {
         return PayBy::$apiBase;
     }
 
     /**
-     * @return ApiResource The refreshed resource.
+     * @return string The name of the method
      */
-    public function refresh()
+    public static function methodName()
     {
-        $requestor = new ApiRequestor($this->_opts->privateKey, static::baseUrl(), $this->_opts->signOpts);
-        $url = $this->instanceUrl();
-
-        list($response, $this->_opts->privateKey) = $requestor->request(
-            'get',
-            $url,
-            $this->_retrieveOptions,
-            $this->_opts->headers
-        );
-        $this->refreshFrom($response, $this->_opts);
-        return $this;
-    }
-
-    /**
-     * @return string The name of the class, with namespacing and underscores
-     *    stripped.
-     */
-    public static function className()
-    {
-        $class = get_called_class();
-        // Useful for namespaces: Foo\Charge
-        if ($postfix = strrchr($class, '\\')) {
-            $class = substr($postfix, 1);
+        $backtrace = debug_backtrace();
+        while ($trace=array_shift($backtrace)) {
+            if ($trace["function"] === "_create") {
+                return array_shift($backtrace)["function"];
+            }
         }
-        // Useful for underscored 'namespaces': Foo_Charge
-        if ($postfixFakeNamespaces = strrchr($class, '')) {
-            $class = $postfixFakeNamespaces;
-        }
-        if (substr($class, 0, strlen('PayBy')) == 'PayBy') {
-            $class = substr($class, strlen('PayBy'));
-        }
-        $class = str_replace('_', '', $class);
-        $name = urlencode($class);
-        $name = strtolower($name);
-        return $name;
+        return "";
     }
 
     /**
@@ -68,43 +35,8 @@ abstract class ApiResource extends PayByObject
      */
     public static function classUrl()
     {
-        $base = static::className();
-        return "/v1/${base}s";
-    }
-
-    /**
-     * @return string The full API URL for this API resource.
-     */
-    public function instanceUrl()
-    {
-        $id = $this['id'];
-        $class = get_called_class();
-        if ($id === null) {
-            $message = "Could not determine which URL to request: "
-                . "$class instance has invalid ID: $id";
-            throw new Error\InvalidRequest($message, null);
-        }
-        $id = Util\Util::utf8($id);
-        $base = static::classUrl();
-        $extn = urlencode($id);
-        return "$base/$extn";
-    }
-
-    /**
-     * @return string The full API URL for this API resource.
-     */
-    public static function instanceUrlWithId($id)
-    {
-        $class = get_called_class();
-        if ($id === null) {
-            $message = "Could not determine which URL to request: "
-                . "$class instance has invalid ID: $id";
-            throw new Error\InvalidRequest($message, null);
-        }
-        $id = Util\Util::utf8($id);
-        $base = static::classUrl();
-        $extn = urlencode($id);
-        return "$base/$extn";
+        $base = static::methodName();
+        return "/acquire2/${base}";
     }
 
     private static function _validateParams($params = null)
@@ -116,79 +48,20 @@ abstract class ApiResource extends PayByObject
         }
     }
 
-    protected function _request($method, $url, $params = [], $options = null)
+    protected static function _staticRequest($method, $url, $params)
     {
-        $opts = $this->_opts->merge($options);
-        return static::_staticRequest($method, $url, $params, $opts);
+        $requestor = new ApiRequestor(static::baseUrl());
+        return $requestor->request($method, $url, $params);
     }
 
-    protected static function _staticRequest($method, $url, $params, $options)
-    {
-        $opts = Util\RequestOptions::parse($options);
-        $opts->mergeSignOpts(static::$signOpts);
-        $requestor = new ApiRequestor($opts->privateKey, static::baseUrl(), $opts->signOpts);
-        list($response, $opts->privateKey) = $requestor->request($method, $url, $params, $opts->headers);
-        foreach ($opts->headers as $k => $v) {
-            if (!array_key_exists($k, self::$HEADERS_TO_PERSIST)) {
-                unset($opts->headers[$k]);
-            }
-        }
-        return [$response, $opts];
-    }
 
-    protected static function _retrieve($id, $options = null)
-    {
-        $opts = Util\RequestOptions::parse($options);
-        $opts->mergeSignOpts(static::$signOpts);
-        $instance = new static($id, $opts);
-        $instance->refresh();
-        return $instance;
-    }
-
-    protected static function _all($params = null, $options = null)
+    protected static function _create($params = null)
     {
         self::_validateParams($params);
         $url = static::classUrl();
 
-        list($response, $opts) = static::_staticRequest('get', $url, $params, $options);
-        return Util\Util::convertToPayByObject($response, $opts);
+        $response = static::_staticRequest('post', $url, $params);
+        return Util\Util::convertToPayByObject($response);
     }
 
-    protected static function _create($params = null, $options = null)
-    {
-        self::_validateParams($params);
-        $url = static::classUrl();
-
-        list($response, $opts) = static::_staticRequest('post', $url, $params, $options);
-        return Util\Util::convertToPayByObject($response, $opts);
-    }
-
-    protected function _save($options = null)
-    {
-        $params = $this->serializeParameters();
-        if (count($params) > 0) {
-            $url = $this->instanceUrl();
-            list($response, $opts) = $this->_request('put', $url, $params, $options);
-            $this->refreshFrom($response, $opts);
-        }
-        return $this;
-    }
-
-    protected function _delete($params = null, $options = null)
-    {
-        self::_validateParams($params);
-
-        $url = $this->instanceUrl();
-        list($response, $opts) = $this->_request('delete', $url, $params, $options);
-        $this->refreshFrom($response, $opts);
-        return $this;
-    }
-
-    protected static function _directRequest($method, $url, $params = null, $options = null)
-    {
-        self::_validateParams($params);
-
-        list($response, $opts) = static::_staticRequest($method, $url, $params, $options);
-        return Util\Util::convertToPayByObject($response, $opts);
-    }
 }

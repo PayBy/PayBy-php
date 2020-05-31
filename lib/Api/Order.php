@@ -9,12 +9,13 @@ class Order extends ApiResource
 
     /**
      * @param array|null $params
-     * @param array|string|null $opts
      *
      * @return Order The created order.
      */
-    public static function placeOrder($params = null, $opts = null)
+    public static function placeOrder($params = null)
     {
-        return self::_create($params, $opts);
+        $wrapper=ApiRequestor::buildPayByPubRequest();
+        $wrapper["bizContent"] = $params;
+        return self::_create($wrapper);
     }
 }
