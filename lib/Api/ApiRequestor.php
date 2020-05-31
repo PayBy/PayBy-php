@@ -3,21 +3,23 @@
 namespace PayBy\Api;
 
 use PayBy\PayBy;
+use PayBy\Util;
+use PayBy\Error;
 
 class ApiRequestor
 {
     /**
-     * @var string $apiKey The API key that's to be used to make requests.
+     * @var string $privateKey The API key that's to be used to make requests.
      */
-    public $apiKey;
+    public $privateKey;
 
     private $_apiBase;
 
     private $_signOpts;
 
-    public function __construct($apiKey = null, $apiBase = null, $signOpts = null)
+    public function __construct($privateKey = null, $apiBase = null, $signOpts = null)
     {
-        $this->_apiKey = $apiKey;
+        $this->_privateKey = $privateKey;
         if (!$apiBase) {
             $apiBase = PayBy::$apiBase;
         }
@@ -95,13 +97,13 @@ class ApiRequestor
         if (!$headers) {
             $headers = [];
         }
-        list($rbody, $rcode, $myApiKey) = $this->_requestRaw($method, $url, $params, $headers);
+        list($rbody, $rcode, $myPrivateKey) = $this->_requestRaw($method, $url, $params, $headers);
         // response code 502 retry
         if ($rcode == 502) {
-            list($rbody, $rcode, $myApiKey) = $this->_requestRaw($method, $url, $params, $headers);
+            list($rbody, $rcode, $myPrivateKey) = $this->_requestRaw($method, $url, $params, $headers);
         }
         $resp = $this->_interpretResponse($rbody, $rcode);
-        return [$resp, $myApiKey];
+        return [$resp, $myPrivateKey];
     }
 
 
@@ -164,14 +166,14 @@ class ApiRequestor
 
     private function _requestRaw($method, $url, $params, $headers)
     {
-        $myApiKey = $this->_apiKey;
-        if (!$myApiKey) {
-            $myApiKey = PayBy::$apiKey;
+        $myPrivateKey = $this->_privateKey;
+        if (!$myPrivateKey) {
+            $myPrivateKey = PayBy::$privateKey;
         }
 
-        if (!$myApiKey) {
+        if (!$myPrivateKey) {
             $msg = 'No API key provided.  (HINT: set your API key using '
-                . '"PayBy::setApiKey(<API-KEY>)".  You can generate API keys from '
+                . '"PayBy::setPrivateKey(<API-KEY>)".  You can generate API keys from '
                 . 'the PayBy web interface.  See https://payby.com/ for '
                 . 'details.';
             throw new Error\Authentication($msg);
@@ -191,7 +193,7 @@ class ApiRequestor
         $defaultHeaders = [
             'X-PayBy-Client-User-Agent' => json_encode($ua),
             'User-Agent' => 'PayBy/v1 PhpBindings/' . PayBy::VERSION,
-            'Authorization' => 'Bearer ' . $myApiKey,
+            'Authorization' => 'Bearer ' . $myPrivateKey,
         ];
         if (PayBy::$apiVersion) {
             $defaultHeaders['PayBy-Version'] = PayBy::$apiVersion;
@@ -224,7 +226,7 @@ class ApiRequestor
             $rawHeaders,
             $params
         );
-        return [$rbody, $rcode, $myApiKey];
+        return [$rbody, $rcode, $myPrivateKey];
     }
 
     private function _interpretResponse($rbody, $rcode)

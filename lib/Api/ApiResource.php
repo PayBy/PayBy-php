@@ -4,6 +4,8 @@ namespace PayBy\Api;
 
 use PayBy\PayBy;
 use PayBy\PayByObject;
+use PayBy\Util;
+use PayBy\Error;
 
 abstract class ApiResource extends PayByObject
 {
@@ -24,10 +26,10 @@ abstract class ApiResource extends PayByObject
      */
     public function refresh()
     {
-        $requestor = new ApiRequestor($this->_opts->apiKey, static::baseUrl(), $this->_opts->signOpts);
+        $requestor = new ApiRequestor($this->_opts->privateKey, static::baseUrl(), $this->_opts->signOpts);
         $url = $this->instanceUrl();
 
-        list($response, $this->_opts->apiKey) = $requestor->request(
+        list($response, $this->_opts->privateKey) = $requestor->request(
             'get',
             $url,
             $this->_retrieveOptions,
@@ -124,8 +126,8 @@ abstract class ApiResource extends PayByObject
     {
         $opts = Util\RequestOptions::parse($options);
         $opts->mergeSignOpts(static::$signOpts);
-        $requestor = new ApiRequestor($opts->apiKey, static::baseUrl(), $opts->signOpts);
-        list($response, $opts->apiKey) = $requestor->request($method, $url, $params, $opts->headers);
+        $requestor = new ApiRequestor($opts->privateKey, static::baseUrl(), $opts->signOpts);
+        list($response, $opts->privateKey) = $requestor->request($method, $url, $params, $opts->headers);
         foreach ($opts->headers as $k => $v) {
             if (!array_key_exists($k, self::$HEADERS_TO_PERSIST)) {
                 unset($opts->headers[$k]);

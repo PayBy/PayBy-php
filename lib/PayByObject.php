@@ -4,6 +4,7 @@ namespace PayBy;
 
 use ArrayAccess;
 use InvalidArgumentException;
+use JsonSerializable;
 
 class PayByObject implements ArrayAccess, JsonSerializable
 {
