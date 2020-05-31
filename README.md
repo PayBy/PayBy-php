@@ -33,7 +33,7 @@ require_once('/path/to/payby-php/init.php');
 ### Initial
 
 ```php
-\PayBy\PayBy::setApiKey('YOUR-KEY');
+\PayBy\PayBy::setPrivateKey('YOUR-KEY');
 ```
 
 ## Order
