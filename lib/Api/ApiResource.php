@@ -22,7 +22,7 @@ abstract class ApiResource extends PayByObject
     public static function methodName()
     {
         $backtrace = debug_backtrace();
-        while ($trace=array_shift($backtrace)) {
+        while ($trace = array_shift($backtrace)) {
             if ($trace["function"] === "_create") {
                 return array_shift($backtrace)["function"];
             }
@@ -36,14 +36,16 @@ abstract class ApiResource extends PayByObject
     public static function classUrl()
     {
         $base = static::methodName();
-        return "/acquire2/${base}";
+        $apiClass = get_called_class();
+        $apiClass = new $apiClass();
+        return "/acquire2" . $apiClass->path . "/${base}";
     }
 
     private static function _validateParams($params = null)
     {
         if ($params && !is_array($params)) {
             $message = "You must pass an array as the first argument to PayBy API "
-               . "method calls.";
+                . "method calls.";
             throw new Error\Api($message);
         }
     }
