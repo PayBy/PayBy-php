@@ -16,7 +16,6 @@ require(dirname(__FILE__) . '/lib/PayBy.php');
 // Utilities
 require(dirname(__FILE__) . '/lib/Util/Util.php');
 require(dirname(__FILE__) . '/lib/Util/Set.php');
-require(dirname(__FILE__) . '/lib/Util/RequestOptions.php');
 
 // Errors
 require(dirname(__FILE__) . '/lib/Error/Base.php');

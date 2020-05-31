@@ -21,19 +21,17 @@ class PayByObject implements ArrayAccess, JsonSerializable
 
     public static function init()
     {
-        self::$permanentAttributes = new Util\Set(['_opts', 'id']);
+        self::$permanentAttributes = new Util\Set(['id']);
         self::$nestedUpdatableAttributes = new Util\Set(['metadata']);
     }
 
-    protected $_opts;
     protected $_values;
     protected $_unsavedValues;
     protected $_transientValues;
     protected $_retrieveOptions;
 
-    public function __construct($id = null, $opts = null)
+    public function __construct($id = null)
     {
-        $this->_opts = $opts ? $opts : new Util\RequestOptions();
         $this->_values = [];
         $this->_unsavedValues = new Util\Set();
         $this->_transientValues = new Util\Set();
@@ -124,100 +122,6 @@ class PayByObject implements ArrayAccess, JsonSerializable
         return array_key_exists($k, $this->_values) ? $this->_values[$k] : null;
     }
 
-    public function keys()
-    {
-        return array_keys($this->_values);
-    }
-
-    /**
-     * This unfortunately needs to be public to be used in Util.php
-     *
-     * @param stdObject $values
-     * @param array $opts
-     *
-     * @return PayByObject The object constructed from the given values.
-     */
-    public static function constructFrom($values, $opts)
-    {
-        $obj = new static(isset($values->id) ? $values->id : null);
-        $obj->refreshFrom($values, $opts);
-        return $obj;
-    }
-
-    /**
-     * Refreshes this object using the provided values.
-     *
-     * @param stdObject $values
-     * @param array $opts
-     * @param boolean $partial Defaults to false.
-     */
-    public function refreshFrom($values, $opts, $partial = false)
-    {
-        $this->_opts = $opts;
-
-        // Wipe old state before setting new.  This is useful for e.g. updating a
-        // customer, where there is no persistent card parameter.  Mark those values
-        // which don't persist as transient
-        if ($partial) {
-            $removed = new Util\Set();
-        } else {
-            $removed = array_diff(array_keys($this->_values), array_keys(get_object_vars($values)));
-        }
-
-        foreach ($removed as $k) {
-            if (self::$permanentAttributes->includes($k)) {
-                continue;
-            }
-            unset($this->$k);
-        }
-
-        foreach ($values as $k => $v) {
-            if (self::$permanentAttributes->includes($k)) {
-                continue;
-            }
-
-            if (self::$nestedUpdatableAttributes->includes($k) && is_object($v)) {
-                $this->_values[$k] = AttachedObject::constructFrom($v, $opts);
-            } else {
-                $this->_values[$k] = Util\Util::convertToPayByObject($v, $opts);
-            }
-
-            $this->_transientValues->discard($k);
-            $this->_unsavedValues->discard($k);
-        }
-    }
-
-    /**
-     * @param boolean $include_all Include all property or not.
-     * @return array A recursive mapping of attributes to values for this object,
-     *    including the proper value for deleted attributes.
-     */
-    public function serializeParameters($include_all = false)
-    {
-        $params = [];
-        if ($this->_unsavedValues) {
-            foreach ($this->_unsavedValues->toArray() as $k) {
-                $v = $this->$k;
-                $params[$k] = $v;
-            }
-        }
-        if (!empty($params) && $include_all) {
-            $params = $this->_values;
-        }
-
-        // Get nested updates.
-        foreach (self::$nestedUpdatableAttributes->toArray() as $property) {
-            if (isset($this->$property) && $this->$property instanceof PayByObject) {
-                $serializedParameters = $this->$property->serializeParameters(true);
-                if ($this->_unsavedValues->includes($property) || !empty($serializedParameters)) {
-                    $params[$property] = $serializedParameters;
-                }
-            }
-        }
-
-        return $params;
-    }
-
     public function jsonSerialize()
     {
         return $this->__toStdObject();
@@ -249,6 +153,60 @@ class PayByObject implements ArrayAccess, JsonSerializable
     public function __toStdObject()
     {
         return Util\Util::convertPayByObjectToStdObject($this->_values);
+    }
+
+    /**
+     * This unfortunately needs to be public to be used in Util.php
+     *
+     * @param stdObject $values
+     *
+     * @return PayByObject The object constructed from the given values.
+     */
+    public static function constructFrom($values)
+    {
+        $obj = new static(isset($values->id) ? $values->id : null);
+        $obj->refreshFrom($values);
+        return $obj;
+    }
+
+    /**
+     * Refreshes this object using the provided values.
+     *
+     * @param stdObject $values
+     * @param boolean $partial Defaults to false.
+     */
+    public function refreshFrom($values, $partial = false)
+    {
+        // Wipe old state before setting new.  This is useful for e.g. updating a
+        // customer, where there is no persistent card parameter.  Mark those values
+        // which don't persist as transient
+        if ($partial) {
+            $removed = new Util\Set();
+        } else {
+            $removed = array_diff(array_keys($this->_values), array_keys(get_object_vars($values)));
+        }
+
+        foreach ($removed as $k) {
+            if (self::$permanentAttributes->includes($k)) {
+                continue;
+            }
+            unset($this->$k);
+        }
+
+        foreach ($values as $k => $v) {
+            if (self::$permanentAttributes->includes($k)) {
+                continue;
+            }
+
+            if (self::$nestedUpdatableAttributes->includes($k) && is_object($v)) {
+                $this->_values[$k] = AttachedObject::constructFrom($v);
+            } else {
+                $this->_values[$k] = Util\Util::convertToPayByObject($v);
+            }
+
+            $this->_transientValues->discard($k);
+            $this->_unsavedValues->discard($k);
+        }
     }
 }
 

@@ -11,7 +11,7 @@ class PayBy
     /**
      * @var string The base URL for the PayBy API.
      */
-    public static $apiBase = 'https://api.payby.com/sgs/api/';
+    public static $apiBase = 'https://api.payby.com/sgs/api';
     /**
      * @var string|null The version of the PayBy API to use for requests.
      */
