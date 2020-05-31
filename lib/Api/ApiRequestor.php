@@ -346,7 +346,7 @@ class ApiRequestor
                 $msg = "Could not connect to PayBy ($apiBase).  Please check your "
                 . "internet connection and try again.  If this problem persists, "
                 . "you should check PayBy's service status at "
-                . "https://pingxx.com/status.";
+                . "https://payby.com/status.";
                 break;
             case CURLE_SSL_CACERT:
             case CURLE_SSL_PEER_CERTIFICATE:
