@@ -68,3 +68,45 @@ require_once('/path/to/payby-php/init.php');
         ]
     );
 ```
+### cancelOrder
+```php
+\PayBy\Api\Order::placeOrder();
+```
+### getOrder
+```php
+\PayBy\Api\Order::getOrder();
+```
+
+## Refund
+### placeOrder
+```php
+\PayBy\Api\Refund::placeOrder();
+```
+### getOrder
+```php
+\PayBy\Api\Refund::getOrder();
+```
+
+## Transfer
+### placeTransferOrder
+```php
+\PayBy\Api\Transfer::placeTransferOrder();
+```
+### getTransferOrder
+```php
+\PayBy\Api\Transfer::getTransferOrder();
+```
+### placeTransferToBankOrder
+```php
+\PayBy\Api\Transfer::placeTransferToBankOrder();
+```
+### getTransferToBankOrder
+```php
+\PayBy\Api\Transfer::getTransferToBankOrder();
+```
+
+## Result notification
+### Verify signature
+```php
+// TODO
+```

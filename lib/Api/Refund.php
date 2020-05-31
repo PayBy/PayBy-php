@@ -4,9 +4,9 @@ namespace PayBy\Api;
 
 use PayBy\PayBy;
 
-class Order extends ApiResource
+class Refund extends ApiResource
 {
-    public $path="";
+    public $path = "/refund";
 
     /**
      * @param array|null $params
@@ -15,19 +15,7 @@ class Order extends ApiResource
      */
     public static function placeOrder($params = null)
     {
-        $wrapper=ApiRequestor::buildPayByPubRequest();
-        $wrapper["bizContent"] = $params;
-        return self::_create($wrapper);
-    }
-
-    /**
-     * @param array|null $params
-     *
-     * @return Response cancelOrder response.
-     */
-    public static function cancelOrder($params = null)
-    {
-        $wrapper=ApiRequestor::buildPayByPubRequest();
+        $wrapper = ApiRequestor::buildPayByPubRequest();
         $wrapper["bizContent"] = $params;
         return self::_create($wrapper);
     }
@@ -43,5 +31,4 @@ class Order extends ApiResource
         $wrapper["bizContent"] = $params;
         return self::_create($wrapper);
     }
-
 }
