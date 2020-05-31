@@ -37,6 +37,34 @@ require_once('/path/to/payby-php/init.php');
 ```
 
 ## Order
-
+### Create an order
 ```php
-// TODO
+\PayBy\Api\Order::placeOrder(
+        [
+            "merchantOrderNo" => $order_no,
+            "subject" => "iPhone",
+            'totalAmount' => [
+	            'currency' => 'AED',
+	            'amount' => '0.3',
+	        ],
+            "paySceneCode" => "DYNQR",
+            "notifyUrl" => "http://yoursite.com/api/notification",
+            "accessoryContent" => [
+	            'amountDetail' => [
+	            	'vatAmount' => [
+		            	'currency' => 'AED',
+		            	'amount' => '0.3',
+		            ],
+	            ],
+	            'goodsDetail' => [
+	            	'body' => 'Gifts',
+	            	'goodsName' => 'candy flower',
+	            	'goodsId' => 'GI1005',
+	            ],
+	            'terminalDetail' => [
+	            	'merchantName' => 'candy home',
+	            ],
+            ],
+        ]
+    );
+```
