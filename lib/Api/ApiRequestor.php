@@ -185,7 +185,7 @@ class ApiRequestor
             'X-PayBy-Client-User-Agent' => json_encode($ua),
             'User-Agent' => 'PayBy/v1 PhpBindings/' . PayBy::VERSION,
             'Content-Language' => 'en',
-            'Partner-Id:' => PayBy::$partnerId,
+            'Partner-Id' => PayBy::$partnerId,
         ];
         if (PayBy::$apiVersion) {
             $defaultHeaders['PayBy-Version'] = PayBy::$apiVersion;
