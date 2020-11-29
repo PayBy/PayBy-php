@@ -92,23 +92,6 @@ class PayBy
     /**
      * @return string
      */
-    public static function getPublicKey()
-    {
-        return self::$PublicKey;
-    }
-
-    /**
-     * @param string $path
-     */
-    public static function setPublicKey($path)
-    {
-        self::$publicKey = $path;
-    }
-
-
-    /**
-     * @return string
-     */
     public static function getPrivateKey()
     {
         return self::$privateKey;
@@ -121,4 +104,14 @@ class PayBy
     {
         self::$privateKey = $key;
     }
+
+    /**
+     * @param string $apiBase
+     */
+    public static function setApiBase($apiBase)
+    {
+        self::$apiBase = $apiBase;
+    }
+
+
 }
