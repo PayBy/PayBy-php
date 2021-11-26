@@ -34,6 +34,11 @@ class PayBy
     public static $privateKey;
 
     /**
+     * @var string The path to the private key that will be used to sign requests.
+     */
+    public static $privateKeyPath;
+
+    /**
      * @var string The CA certificate path.
      */
     public static $caBundle;
@@ -113,5 +118,19 @@ class PayBy
         self::$apiBase = $apiBase;
     }
 
+    /**
+     * @return string
+     */
+    public static function getPrivateKeyPath()
+    {
+        return self::$privateKeyPath;
+    }
 
+    /**
+     * @param string $path
+     */
+    public static function setPrivateKeyPath($path)
+    {
+        self::$privateKeyPath = $path;
+    }
 }
