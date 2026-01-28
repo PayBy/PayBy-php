@@ -2,5 +2,14 @@
 .idea/
 vendor/
 composer.lock
+
+# Security - Never commit keys
 example/cert/PayBy_key_private.pem
 example/cert/PayBy_key_public_key.pem
+*.pem
+!cacert.pem
+*.key
+*.p12
+*.pfx
+private_key*
+*.pem.sample
